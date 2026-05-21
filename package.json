@@ -1,0 +1,22 @@
+{
+  "name": "tunerip",
+  "version": "2.0.0",
+  "description": "TuneRip - YouTube Music Downloader Web App",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start:backend": "npm start --prefix backend",
+    "postinstall": "npm install --prefix frontend && npm install --prefix backend"
+  },
+  "keywords": [
+    "tunerip",
+    "downloader",
+    "youtube"
+  ],
+  "author": "TuneRip",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
