@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useStore } from '@/lib/store';
-import { findActiveLine } from '@/lib/lyricsApi';
+import { findActiveLine, fetchLyrics, buildCacheKey } from '@/lib/lyricsApi';
 import type { LyricLine } from '@/lib/store';
 import { X, Mic, AlignCenter, Music2 } from 'lucide-react';
 
@@ -22,10 +22,40 @@ export default function KaraokeMode({ currentTime }: KaraokeModeProps) {
     isSingAlongMode,
     toggleKaraoke,
     toggleSingAlong,
+    setCurrentLyrics,
+    cacheLyrics,
+    lyricsCache,
   } = useStore();
 
   const [prevIdx, setPrevIdx] = useState(-1);
+  const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch lyrics if not already cached
+  useEffect(() => {
+    if (!currentTrack || !isKaraokeMode) return;
+
+    const key = buildCacheKey(currentTrack.title, currentTrack.artist);
+    const cached = useStore.getState().lyricsCache[key];
+    if (cached) {
+      setCurrentLyrics(cached);
+      setLoading(false);
+      return;
+    }
+
+    // Don't refetch if currentLyrics is already populated for this track
+    // (though cache check above should handle that, this is extra safety)
+    
+    setLoading(true);
+    fetchLyrics(currentTrack.title, currentTrack.artist, currentTrack.duration)
+      .then((data) => {
+        setCurrentLyrics(data);
+        cacheLyrics(key, data);
+      })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrack?.id, isKaraokeMode]);
+
 
   // ESC key handler
   useEffect(() => {
