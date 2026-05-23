@@ -1,6 +1,42 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// ─── Background Customization ─────────────────────────────────────────────────
+
+export type BackgroundType = 'solid' | 'gradient' | 'image' | 'video' | 'animated';
+
+export type AnimatedPreset = 'aurora' | 'mesh' | 'particles' | 'waves';
+
+export interface BackgroundConfig {
+  type: BackgroundType;
+  // solid
+  solidColor?: string;
+  // gradient
+  gradientColors?: string[];
+  gradientAngle?: number;
+  gradientAnimated?: boolean;
+  // image / video (data: URL or preset /path)
+  src?: string;
+  // animated preset name
+  preset?: AnimatedPreset;
+  // overlays
+  blur?: number;         // px 0–20
+  brightness?: number;  // % 50–100
+  dimOpacity?: number;  // 0–1
+  animationsEnabled?: boolean;
+}
+
+export const DEFAULT_BACKGROUND: BackgroundConfig = {
+  type: 'gradient',
+  gradientColors: ['#0a0a0f', '#1a0033', '#000d1a'],
+  gradientAngle: 135,
+  gradientAnimated: true,
+  blur: 0,
+  brightness: 100,
+  dimOpacity: 0,
+  animationsEnabled: true,
+};
+
 export interface HistoryEntry {
   id: string;
   title: string;
@@ -94,6 +130,10 @@ interface StoreState extends PlayerState {
   clearCompletedFromQueue: () => void;
   defaultQuality: string;
   setDefaultQuality: (q: string) => void;
+  // Background
+  backgroundConfig: BackgroundConfig;
+  setBackground: (config: Partial<BackgroundConfig>) => void;
+  resetBackground: () => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -153,6 +193,12 @@ export const useStore = create<StoreState>()(
 
       defaultQuality: '192',
       setDefaultQuality: (q) => set({ defaultQuality: q }),
+
+      // ── Background ───────────────────────────────────────────────────────
+      backgroundConfig: DEFAULT_BACKGROUND,
+      setBackground: (config) =>
+        set((s) => ({ backgroundConfig: { ...s.backgroundConfig, ...config } })),
+      resetBackground: () => set({ backgroundConfig: DEFAULT_BACKGROUND }),
 
       // ── Music Player ──────────────────────────────────────────────────────
       currentTrack: null,
@@ -240,6 +286,7 @@ export const useStore = create<StoreState>()(
         volume: s.volume,
         repeat: s.repeat,
         isShuffle: s.isShuffle,
+        backgroundConfig: s.backgroundConfig,
       }),
     }
   )

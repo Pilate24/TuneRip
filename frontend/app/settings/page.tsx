@@ -1,8 +1,14 @@
 'use client';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/lib/store';
-import { Settings, Sun, Moon, Volume2, Trash2, Info, Shield, ExternalLink } from 'lucide-react';
+import { Settings, Sun, Moon, Volume2, Trash2, Info, Shield, Palette, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
+
+const BackgroundCustomizer = dynamic(() => import('@/components/BackgroundCustomizer'), {
+  ssr: false,
+});
 
 const QUALITIES = [
   { value: '128', label: '128 kbps', desc: 'Smaller file size, standard quality' },
@@ -10,12 +16,28 @@ const QUALITIES = [
   { value: '320', label: '320 kbps', desc: 'Best quality, larger file size' },
 ];
 
+const BACKGROUND_TYPE_LABELS: Record<string, string> = {
+  solid: 'Solid Color',
+  gradient: 'Gradient',
+  image: 'Custom Image',
+  video: 'Custom Video',
+  animated: 'Animated',
+};
+
 export default function SettingsPage() {
-  const { theme, toggleTheme, defaultQuality, setDefaultQuality, history, clearHistory } = useStore();
+  const { theme, toggleTheme, defaultQuality, setDefaultQuality, history, clearHistory, backgroundConfig } = useStore();
+  const [showBgCustomizer, setShowBgCustomizer] = useState(false);
+
+  const bgTypeLabel = BACKGROUND_TYPE_LABELS[backgroundConfig.type] ?? 'Custom';
+  const bgDetail =
+    backgroundConfig.type === 'animated' ? backgroundConfig.preset ?? '' :
+    backgroundConfig.type === 'solid' ? backgroundConfig.solidColor ?? '' :
+    '';
 
   return (
     <div style={{ minHeight: '100vh', padding: '40px 24px 80px' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -32,8 +54,10 @@ export default function SettingsPage() {
           <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
             Appearance
           </h2>
-          <div style={{ padding: '20px', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+
+            {/* Theme toggle */}
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {theme === 'dark' ? <Moon size={20} style={{ color: 'var(--accent-light)' }} /> : <Sun size={20} style={{ color: '#f59e0b' }} />}
                 <div>
@@ -61,6 +85,44 @@ export default function SettingsPage() {
               >
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                 Switch to {theme === 'dark' ? 'Light' : 'Dark'}
+              </motion.button>
+            </div>
+
+            {/* Background customization */}
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Palette size={20} style={{ color: 'var(--accent-light)' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '15px', fontWeight: 600 }}>Background</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {bgTypeLabel}{bgDetail ? ` · ${bgDetail}` : ''}
+                    {(backgroundConfig.blur ?? 0) > 0 ? ` · blur ${backgroundConfig.blur}px` : ''}
+                  </p>
+                </div>
+              </div>
+              <motion.button
+                id="open-bg-customizer"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowBgCustomizer(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  background: 'rgba(124,58,237,0.12)',
+                  border: '1px solid rgba(124,58,237,0.3)',
+                  color: 'var(--accent-light)',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                <Sparkles size={15} />
+                Customize
               </motion.button>
             </div>
           </div>
@@ -119,7 +181,7 @@ export default function SettingsPage() {
         {/* Data */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ marginBottom: '24px' }}>
           <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
-            Data & Privacy
+            Data &amp; Privacy
           </h2>
           <div style={{ padding: '20px', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -192,6 +254,13 @@ export default function SettingsPage() {
           </div>
         </motion.section>
       </div>
+
+      {/* Background Customizer Modal */}
+      <AnimatePresence>
+        {showBgCustomizer && (
+          <BackgroundCustomizer onClose={() => setShowBgCustomizer(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

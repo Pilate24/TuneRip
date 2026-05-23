@@ -51,7 +51,7 @@ html {
 
 body {
   font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
@@ -106,7 +106,7 @@ body {
   box-shadow: 0 0 15px var(--accent-glow);
 }
 
-/* Animated gradient background */
+/* Animated gradient background (legacy utility + AnimatedBackground gradient type) */
 .gradient-bg {
   background: linear-gradient(-45deg, #0a0a0f, #1a0033, #000d1a, #0a0a0f);
   background-size: 400% 400%;
@@ -116,6 +116,13 @@ body {
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Used by AnimatedBackground gradient type */
+@keyframes bg-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
@@ -247,7 +254,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* Noise texture overlay */
+/* Noise texture overlay — sits above AnimatedBackground (z-index -1) */
 .noise-overlay::before {
   content: '';
   position: fixed;

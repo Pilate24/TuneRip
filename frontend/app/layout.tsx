@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import ThemeProvider from '@/components/ThemeProvider';
 import MusicPlayer from '@/components/MusicPlayer';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 export const metadata: Metadata = {
   title: 'TuneRip – YouTube Music Downloader',
@@ -36,6 +37,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body suppressHydrationWarning>
         <ThemeProvider>
+          {/* Global animated background — fixed, z-index: -1, behind everything */}
+          <AnimatedBackground />
           <div className="noise-overlay" style={{ minHeight: '100vh', position: 'relative' }}>
             <Navbar />
             <main style={{ paddingTop: '70px' }}>{children}</main>
