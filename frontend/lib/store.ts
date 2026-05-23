@@ -273,7 +273,8 @@ export const useStore = create<StoreState>()(
       })),
       toggleSingAlong: () => set((s) => ({
         isSingAlongMode: !s.isSingAlongMode,
-        isKaraokeMode: !s.isSingAlongMode,
+        // Entering Sing Along always opens karaoke overlay; exiting leaves karaoke as-is
+        isKaraokeMode: !s.isSingAlongMode ? true : s.isKaraokeMode,
         showLyrics: true,
       })),
 
