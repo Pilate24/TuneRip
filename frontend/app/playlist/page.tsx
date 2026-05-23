@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 import {
   List,
   Link2,
@@ -14,6 +15,7 @@ import {
   Archive,
   ChevronDown,
   ChevronUp,
+  Sparkles,
 } from 'lucide-react';
 import { getInfo, startPlaylistDownload, PlaylistItem, PlaylistInfo, formatDuration } from '@/lib/api';
 import { useStore } from '@/lib/store';
@@ -21,9 +23,14 @@ import QualitySelector from '@/components/QualitySelector';
 import DownloadQueue from '@/components/DownloadQueue';
 import { v4 as uuidv4 } from 'uuid';
 
+const AIPlaylistGenerator = dynamic(() => import('@/components/AIPlaylistGenerator'), { ssr: false });
+
+
 type State = 'idle' | 'loading' | 'ready' | 'downloading' | 'done' | 'error';
+type PageTab = 'downloader' | 'ai';
 
 export default function PlaylistPage() {
+  const [pageTab, setPageTab] = useState<PageTab>('downloader');
   const [url, setUrl] = useState('');
   const [state, setState] = useState<State>('idle');
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
@@ -115,17 +122,52 @@ export default function PlaylistPage() {
       <DownloadQueue />
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '40px', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
             <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'var(--gradient-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <List size={22} color="white" />
             </div>
-            <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Playlist Downloader</h1>
+            <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Playlist</h1>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>
-            Download entire YouTube playlists as a ZIP archive
+            Download playlists or let AI generate one from your music library
           </p>
         </motion.div>
+
+        {/* Tab switcher */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: 28 }}
+        >
+          {([
+            { id: 'downloader', label: 'Playlist Downloader', icon: <Archive size={15} /> },
+            { id: 'ai', label: '🤖 AI Playlists', icon: <Sparkles size={15} /> },
+          ] as const).map(({ id, label, icon }) => (
+            <button key={id} onClick={() => setPageTab(id)}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                padding: '10px 16px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
+                background: pageTab === id ? 'var(--gradient-1)' : 'transparent',
+                color: pageTab === id ? 'white' : 'var(--text-muted)',
+                boxShadow: pageTab === id ? '0 2px 14px rgba(124,58,237,0.35)' : 'none',
+              }}
+            >
+              {icon} {label}
+            </button>
+          ))}
+        </motion.div>
+
+        <AnimatePresence mode="wait">
+          {/* ── AI Playlists tab ── */}
+          {pageTab === 'ai' && (
+            <motion.div key="ai" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+              <AIPlaylistGenerator />
+            </motion.div>
+          )}
+
+          {/* ── Downloader tab ── */}
+          {pageTab === 'downloader' && (
+            <motion.div key="dl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
 
         {/* URL Input */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ marginBottom: '24px' }}>
@@ -258,8 +300,11 @@ export default function PlaylistPage() {
             </motion.div>
           ) : null}
         </AnimatePresence>
+        </motion.div>
+        )}
+        </AnimatePresence>
       </div>
-      <style jsx global>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

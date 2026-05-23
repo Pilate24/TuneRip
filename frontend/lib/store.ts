@@ -37,6 +37,36 @@ export const DEFAULT_BACKGROUND: BackgroundConfig = {
   animationsEnabled: true,
 };
 
+// ─── Lyrics ───────────────────────────────────────────────────────────────────
+
+export interface LyricLine {
+  time: number; // seconds
+  text: string;
+}
+
+export interface LyricsData {
+  synced: LyricLine[] | null;
+  plain: string | null;
+  source: string;
+  cachedAt: number;
+}
+
+// ─── Smart Playlists ──────────────────────────────────────────────────────────
+
+export type MoodType =
+  | 'chill' | 'workout' | 'focus' | 'party'
+  | 'gaming' | 'sleep' | 'romantic' | 'travel';
+
+export interface SmartPlaylist {
+  id: string;
+  name: string;
+  description: string;
+  mood: MoodType;
+  tracks: PlayerTrack[];
+  createdAt: string;
+  coverColor: string;
+}
+
 export interface HistoryEntry {
   id: string;
   title: string;
@@ -134,6 +164,23 @@ interface StoreState extends PlayerState {
   backgroundConfig: BackgroundConfig;
   setBackground: (config: Partial<BackgroundConfig>) => void;
   resetBackground: () => void;
+  // Lyrics
+  lyricsCache: Record<string, LyricsData>;
+  currentLyrics: LyricsData | null;
+  lyricsOffset: number; // ms adjustment
+  showLyrics: boolean;
+  isKaraokeMode: boolean;
+  isSingAlongMode: boolean;
+  setCurrentLyrics: (lyrics: LyricsData | null) => void;
+  cacheLyrics: (key: string, data: LyricsData) => void;
+  setLyricsOffset: (ms: number) => void;
+  toggleLyrics: () => void;
+  toggleKaraoke: () => void;
+  toggleSingAlong: () => void;
+  // Smart Playlists
+  smartPlaylists: SmartPlaylist[];
+  addSmartPlaylist: (playlist: SmartPlaylist) => void;
+  removeSmartPlaylist: (id: string) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -199,6 +246,43 @@ export const useStore = create<StoreState>()(
       setBackground: (config) =>
         set((s) => ({ backgroundConfig: { ...s.backgroundConfig, ...config } })),
       resetBackground: () => set({ backgroundConfig: DEFAULT_BACKGROUND }),
+
+      // ── Lyrics ──────────────────────────────────────────────────────────
+      lyricsCache: {},
+      currentLyrics: null,
+      lyricsOffset: 0,
+      showLyrics: false,
+      isKaraokeMode: false,
+      isSingAlongMode: false,
+      setCurrentLyrics: (lyrics) => set({ currentLyrics: lyrics }),
+      cacheLyrics: (key, data) =>
+        set((s) => {
+          const entries = Object.entries(s.lyricsCache);
+          // Cap cache at 200 songs
+          const pruned = entries.length >= 200
+            ? Object.fromEntries(entries.slice(-199))
+            : s.lyricsCache;
+          return { lyricsCache: { ...pruned, [key]: data } };
+        }),
+      setLyricsOffset: (ms) => set({ lyricsOffset: ms }),
+      toggleLyrics: () => set((s) => ({ showLyrics: !s.showLyrics })),
+      toggleKaraoke: () => set((s) => ({
+        isKaraokeMode: !s.isKaraokeMode,
+        isSingAlongMode: false,
+        showLyrics: true,
+      })),
+      toggleSingAlong: () => set((s) => ({
+        isSingAlongMode: !s.isSingAlongMode,
+        isKaraokeMode: !s.isSingAlongMode,
+        showLyrics: true,
+      })),
+
+      // ── Smart Playlists ──────────────────────────────────────────────────
+      smartPlaylists: [],
+      addSmartPlaylist: (playlist) =>
+        set((s) => ({ smartPlaylists: [playlist, ...s.smartPlaylists] })),
+      removeSmartPlaylist: (id) =>
+        set((s) => ({ smartPlaylists: s.smartPlaylists.filter((p) => p.id !== id) })),
 
       // ── Music Player ──────────────────────────────────────────────────────
       currentTrack: null,
@@ -287,6 +371,9 @@ export const useStore = create<StoreState>()(
         repeat: s.repeat,
         isShuffle: s.isShuffle,
         backgroundConfig: s.backgroundConfig,
+        lyricsCache: s.lyricsCache,
+        lyricsOffset: s.lyricsOffset,
+        smartPlaylists: s.smartPlaylists,
       }),
     }
   )

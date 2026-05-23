@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import {
   Play,
   Pause,
@@ -23,8 +24,13 @@ import {
   Music2,
   ListMusic,
   X,
+  Mic,
 } from 'lucide-react';
 import { useStore, RepeatMode } from '@/lib/store';
+
+const LyricsPlayer = dynamic(() => import('./LyricsPlayer'), { ssr: false });
+const KaraokeMode = dynamic(() => import('./KaraokeMode'), { ssr: false });
+
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -165,7 +171,11 @@ export default function MusicPlayer() {
     nextTrack,
     prevTrack,
     setQueue,
+    showLyrics,
+    toggleLyrics,
+    isKaraokeMode,
   } = useStore();
+
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -681,6 +691,16 @@ export default function MusicPlayer() {
                 <ListMusic size={16} />
               </button>
 
+              {/* Lyrics toggle */}
+              <button
+                className={`player-icon-btn ${showLyrics ? 'player-icon-active' : ''}`}
+                onClick={toggleLyrics}
+                title="Lyrics"
+                style={iconBtn({ color: showLyrics ? 'var(--accent-light)' : 'var(--text-muted)' })}
+              >
+                <Mic size={16} />
+              </button>
+
               {/* Mute */}
               <button
                 className="player-icon-btn"
@@ -802,6 +822,18 @@ export default function MusicPlayer() {
             )}
           </AnimatePresence>
         </motion.div>
+      </AnimatePresence>
+
+      {/* Lyrics Panel */}
+      <AnimatePresence>
+        {showLyrics && !isKaraokeMode && (
+          <LyricsPlayer currentTime={currentTime} onClose={toggleLyrics} />
+        )}
+      </AnimatePresence>
+
+      {/* Karaoke / Sing Along overlay */}
+      <AnimatePresence>
+        {isKaraokeMode && <KaraokeMode currentTime={currentTime} />}
       </AnimatePresence>
     </>
   );
