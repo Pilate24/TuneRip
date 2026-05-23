@@ -29,7 +29,16 @@ export default function SearchPage() {
       setQuality(defaultQuality);
       if (res.length === 0) toast('No results found', { icon: '🔍' });
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Search failed');
+      const isNetworkError =
+        e?.code === 'ERR_NETWORK' ||
+        e?.message?.toLowerCase().includes('network') ||
+        e?.message?.toLowerCase().includes('econnrefused') ||
+        !e?.response;
+      if (isNetworkError) {
+        toast.error('Cannot reach backend server. Make sure it is running on port 5000.', { duration: 5000, icon: '🔌' });
+      } else {
+        toast.error(e?.response?.data?.error || e?.message || 'Search failed');
+      }
     } finally {
       setLoading(false);
     }
